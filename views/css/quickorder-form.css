@@ -1,0 +1,235 @@
+/**
+ * Quick Order Form – v1.5.0
+ * External CSS for the quick order form on product pages.
+ */
+
+#qo-box {
+    margin: 20px 0;
+    border: 2px solid #e67e22;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    font-family: inherit;
+    line-height: 1.5;
+}
+#qo-box *, #qo-box *::before, #qo-box *::after { box-sizing: border-box; }
+
+.qo-hdr {
+    background: #e67e22;
+    color: #fff;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.qo-hdr-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 700;
+}
+.qo-hdr-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.qo-body { padding: 16px; }
+
+.qo-f { margin-bottom: 10px; }
+.qo-f label {
+    display: block;
+    text-align: left;
+    margin-bottom: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+.qo-f .qo-r { color: #e74c3c; font-weight: 700; }
+
+.qo-f input[type="text"],
+.qo-f input[type="tel"],
+.qo-f input[type="number"],
+.qo-f textarea {
+    display: block;
+    width: 100%;
+    padding: 9px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fafafa;
+    color: #222;
+    transition: border-color .2s;
+    -webkit-appearance: none;
+}
+.qo-f input:focus,
+.qo-f textarea:focus {
+    border-color: #e67e22;
+    box-shadow: 0 0 0 2px rgba(230,126,34,0.12);
+    outline: none;
+    background: #fff;
+}
+.qo-f textarea { resize: vertical; min-height: 50px; }
+
+#qo-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    background: #e67e22;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: .5px;
+    transition: background .2s;
+}
+#qo-btn:hover { background: #cf6d17; }
+#qo-btn:disabled { background: #bbb; cursor: wait; }
+#qo-btn .qo-spin { display: none; }
+#qo-btn.qo-loading .qo-txt { display: none; }
+#qo-btn.qo-loading .qo-spin { display: inline; }
+
+#qo-msg {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 18px;
+    word-break: break-word;
+}
+.qo-msg-err { color: #e74c3c; }
+.qo-msg-ok  { color: #27ae60; }
+
+/* Price bar */
+.qo-price-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #fff8f0 0%, #fff3e6 100%);
+    border: 1px solid #f5d6b8;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.qo-price-current {
+    font-size: 26px;
+    font-weight: 800;
+    color: #e67e22;
+}
+.qo-price-old {
+    font-size: 16px;
+    color: #999;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+.qo-discount-badge {
+    background: #e74c3c;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* Urgency */
+.qo-urgency {
+    text-align: center;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+    background: #fff5f5;
+    border: 1px dashed #e74c3c;
+    border-radius: 6px;
+    color: #c0392b;
+    font-size: 13px;
+    font-weight: 600;
+    animation: qo-pulse 2s ease-in-out infinite;
+}
+@keyframes qo-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Hide native product-variants block once cloned into QO form.
+   Uses :has() for modern browsers + fallback class for older ones. */
+body:has(#qo-variants-slot) .product-variants:not(.qo-variants-clone),
+body:has(#qo-variants-slot) .js-product-variants:not(.qo-variants-clone) {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.product-variants.qo-native-variants-hidden {
+    display: none !important;
+}
+
+/* Variants inside QO form (cloned from native PS location) */
+.qo-variants-wrap {
+    background: #fff8f0;
+    border: 1px solid #f5d6b8;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+}
+.qo-variants-wrap .product-variants {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+.qo-variants-wrap .product-variants > .product-variants-item {
+    margin-bottom: 8px !important;
+}
+.qo-variants-wrap .product-variants > .product-variants-item:last-child {
+    margin-bottom: 0 !important;
+}
+.qo-variants-wrap .product-variants label,
+.qo-variants-wrap .product-variants .control-label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    margin-bottom: 4px !important;
+    display: block !important;
+}
+.qo-variants-wrap .product-variants select {
+    width: 100% !important;
+    padding: 8px 10px !important;
+    border: 1px solid #ccc !important;
+    border-radius: 5px !important;
+    background: #fff !important;
+    font-size: 14px !important;
+}
+.qo-variants-wrap .product-variants ul,
+.qo-variants-wrap .product-variants .radio-label {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Trust icons row */
+.qo-trust {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+.qo-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+}
+.qo-trust-icon {
+    font-size: 16px;
+}

@@ -1,0 +1,85 @@
+/**
+ * Quick Order – Hide ONLY the cart button and qty input
+ *
+ * Loaded via displayHeader hook, ONLY when replace-cart mode is ON,
+ * and ONLY on product pages.
+ *
+ * STRICT RULES:
+ *   ✅ Hide the <button> add-to-cart element
+ *   ✅ Hide the qty <input> and its +/- touchspin wrapper
+ *   ❌ NEVER hide any container (.product-quantity, .product-add-to-cart)
+ *   ❌ NEVER affect price display in any way
+ */
+
+/* ─────────────────────────────────────────────────
+   1. HIDE THEME PRICE — Price is shown inside Quick Order form instead
+   ───────────────────────────────────────────────── */
+
+.product-prices,
+.product-prices.js-product-prices,
+.product-price,
+.product-price-and-shipping,
+.product-discount,
+.current-price,
+.current-price-display,
+.current-price-value {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ─────────────────────────────────────────────────
+   2. HIDE — The "Add to Cart" button only
+   ───────────────────────────────────────────────── */
+
+button[data-button-action="add-to-cart"] {
+    display: none !important;
+}
+
+.product-add-to-cart button.add-to-cart,
+form#add-to-cart-or-refresh button.add-to-cart {
+    display: none !important;
+}
+
+form#add-to-cart-or-refresh > input[type="submit"] {
+    display: none !important;
+}
+
+/* ─────────────────────────────────────────────────
+   3. HIDE — The qty input and touchspin controls
+      Target ONLY the specific elements, never containers.
+   ───────────────────────────────────────────────── */
+
+input#quantity_wanted,
+input[name="qty"] {
+    display: none !important;
+}
+
+.bootstrap-touchspin,
+.input-group.bootstrap-touchspin {
+    display: none !important;
+}
+
+.quantity-wanted,
+.qty {
+    display: none !important;
+}
+
+.product-quantity .add {
+    display: none !important;
+}
+
+/* ─────────────────────────────────────────────────
+   4. ALSO PROTECT — variants and availability
+   ───────────────────────────────────────────────── */
+
+.product-variants,
+.product-variants *,
+.product-availability,
+#product-availability,
+.product-flags {
+    visibility: visible !important;
+}
