@@ -758,6 +758,44 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
          * PS_MAIL_METHOD = 3 means "Never send emails" in PrestaShop.
          * We restore the original value immediately after.
          */
+        /* ─────────────────────────────────────────────────────────────────
+           PRE-VALIDATION — the last moment before an order exists.
+
+           Modules that need to veto a submission listen here. Anything a
+           listener returns is treated as a refusal message and shown to the
+           customer; returning nothing lets the order proceed.
+
+           This is the only point at which a refusal is CHEAP. After
+           validateOrder() the order exists, has been counted, and may
+           already have triggered a notification — so a module that finds a
+           problem then can only record it, never prevent it.
+
+           Generic: Quick Order knows no listener by name. With nothing
+           registered, Hook::exec returns an empty string and the flow below
+           is exactly what it always was.
+
+           A listener that THROWS is caught and turned into the same
+           controlled refusal, never a fatal — a third-party bug must not
+           give the customer a white page.
+           ───────────────────────────────────────────────────────────────── */
+        try {
+            $veto = Hook::exec('actionQuickOrderBeforeValidateOrder', [
+                'cart'     => $cart,
+                'customer' => $customer,
+                'product'  => (int) $cart->id,
+            ]);
+        } catch (\Throwable $hookError) {
+            PrestaShopLogger::addLog(
+                '[QuickOrder] a beforeValidateOrder listener failed: ' . $hookError->getMessage(),
+                2, null, 'QuickOrder', 0, true
+            );
+            $veto = '';
+        }
+
+        if (is_string($veto) && trim($veto) !== '') {
+            throw new Exception(trim(strip_tags($veto)));
+        }
+
         $prevMailMethod = Configuration::get('PS_MAIL_METHOD');
         Configuration::updateValue('PS_MAIL_METHOD', 3);
 
