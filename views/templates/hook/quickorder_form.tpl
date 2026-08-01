@@ -406,6 +406,70 @@ var QO_MSG = {
                 }
             }
 
+            /* ─────────────────────────────────────────────────────────────
+               EXTENSION POINT — extra POST fields from other modules.
+
+               Quick Order builds its request field by field and never
+               serialises the page, so a hidden <input> added by another
+               module is NOT sent. Modules that need something to travel with
+               the submission listen for this event and put their fields in
+               `detail.fields`.
+
+               Deliberately generic: Quick Order knows no listener by name and
+               depends on no other module. With nothing listening, the request
+               body is byte-for-byte what it always was.
+
+               Fires immediately before the request, so a listener sees the
+               final product, quantity and variant selection.
+               ───────────────────────────────────────────────────────────── */
+            var qoContract = { fields: {} };
+
+            try {
+                document.dispatchEvent(new CustomEvent('quickorder:beforeSubmit', {
+                    detail: qoContract
+                }));
+            } catch (extErr) {
+                /* A listener that throws must not stop the customer ordering.
+                   Its fields are simply absent, and the module that registered
+                   it is responsible for noticing. */
+                console.warn('[QO] a beforeSubmit listener failed:', extErr);
+            }
+
+            /* Field names Quick Order owns. A listener cannot overwrite one:
+               allowing it would let any module change the product, the
+               quantity or the CSRF token of an order it does not own. */
+            var qoReserved = [
+                'id_product', 'id_product_attribute', 'token', 'ajax',
+                'submitQuickOrder', 'full_name', 'phone', 'address', 'city',
+                'quantity', 'controller', 'fc', 'module'
+            ];
+
+            Object.keys(qoContract.fields || {}).forEach(function (name) {
+                var value = qoContract.fields[name];
+
+                if (qoReserved.indexOf(name) !== -1 || name.indexOf('group_') === 0) {
+                    console.warn('[QO] refused a reserved field from a listener:', name);
+                    return;
+                }
+
+                /* Scalars only. An object or an array would serialise as
+                   "[object Object]" and mean nothing to the server. */
+                if (value === null || value === undefined || value === '') { return; }
+                if (typeof value === 'object' || typeof value === 'function') {
+                    console.warn('[QO] refused a non-scalar field from a listener:', name);
+                    return;
+                }
+
+                /* First writer wins, so two listeners cannot silently fight
+                   over one name — the second is refused and says so. */
+                if (fd.has(name)) {
+                    console.warn('[QO] a field was already set by another listener:', name);
+                    return;
+                }
+
+                fd.append(name, String(value));
+            });
+
             console.log('[QO] POST → ' + url);
 
             fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })

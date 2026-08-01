@@ -27,7 +27,7 @@ class QuickOrder extends PaymentModule
     {
         $this->name            = 'quickorder';
         $this->tab             = 'payments_gateways';
-        $this->version         = '1.4.1';
+        $this->version         = '1.4.2';
         $this->author          = 'QuickOrder';
         $this->need_instance   = 0;
         $this->bootstrap       = true;
