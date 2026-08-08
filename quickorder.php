@@ -122,14 +122,23 @@ class QuickOrder extends PaymentModule
         $controller  = $this->context->controller;
         $page        = isset($controller->php_self) ? $controller->php_self : '';
 
-        /* ── Product page: always register form CSS ── */
-        if ($page === 'product') {
-            $controller->registerStylesheet(
-                'qo-form-css',
-                'modules/' . $this->name . '/views/css/quickorder-form.css',
-                ['media' => 'all', 'priority' => 150]
-            );
+        /* ── Form CSS: every front page, not just the product page ──
+         *
+         * displayProductAdditionalInfo also renders inside the quickview
+         * modal (catalog/_partials/quickview.tpl), and that modal is built
+         * from an AJAX partial whose <head> is thrown away — the markup
+         * lands in the DOM of the *catalog* page. Registering the stylesheet
+         * on the product page alone left the form in the modal completely
+         * unstyled. The file is scoped to #qo-box / .qo-*, so carrying it
+         * everywhere costs one small request and collides with nothing. */
+        $controller->registerStylesheet(
+            'qo-form-css',
+            'modules/' . $this->name . '/views/css/quickorder-form.css',
+            ['media' => 'all', 'priority' => 150]
+        );
 
+        /* ── Product page ── */
+        if ($page === 'product') {
             /* Hide native cart UI only when replace-cart mode is ON */
             if ($replaceCart) {
                 $controller->registerStylesheet(
