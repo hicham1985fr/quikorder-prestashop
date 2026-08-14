@@ -57,6 +57,33 @@
                 required minlength="5" maxlength="255"></textarea>
     </div>
 
+    {* ── QO-GEO-1 — City and postcode ────────────────────────────────────
+       Two fields, side by side on anything wider than a phone. The city is
+       required because a delivery address without one is not deliverable; the
+       postcode is optional because many Moroccan customers genuinely do not
+       know theirs, and asking them to invent one is how this module ended up
+       writing 00000 on 706 addresses.
+
+       `inputmode="numeric"` rather than `type="number"`: a number input
+       strips leading zeros, and `10000` is a real Rabat postcode.            *}
+    <div class="qo-f qo-geo">
+      <div class="qo-geo-city">
+        <label>{l s='City' mod='quickorder'} <span class="qo-r">*</span></label>
+        <input type="text" id="qo_city"
+               placeholder="{l s='e.g. Casablanca' mod='quickorder'}"
+               autocomplete="address-level2"
+               required maxlength="64">
+      </div>
+      <div class="qo-geo-zip">
+        <label>{l s='Postcode' mod='quickorder'}
+               <span class="qo-opt">({l s='optional' mod='quickorder'})</span></label>
+        <input type="text" id="qo_zip"
+               placeholder="{l s='e.g. 20000' mod='quickorder'}"
+               autocomplete="postal-code"
+               inputmode="numeric" maxlength="12">
+      </div>
+    </div>
+
     {* Variants placeholder: populated by JS from native PrestaShop selectors
        (only visible when variants are successfully cloned into slot) *}
     {if $qo_has_variants}
@@ -100,6 +127,9 @@ var QO_MSG = {
     err_phone:    "{l s='Please enter a valid phone number (min 8 digits).' mod='quickorder' js=1}",
     err_address:  "{l s='Please enter a delivery address (min 5 characters).' mod='quickorder' js=1}",
     err_qty:      "{l s='Quantity must be at least 1.' mod='quickorder' js=1}",
+    err_city:     "{l s='Please enter your city.' mod='quickorder' js=1}",
+    err_city_real:"{l s='Please enter the real name of your city.' mod='quickorder' js=1}",
+    err_zip:      "{l s='The postcode must be 5 digits (for example 20000), or left empty.' mod='quickorder' js=1}",
     err_server:   "{l s='Server error' mod='quickorder' js=1}",
     err_invalid:  "{l s='Server returned an invalid response.' mod='quickorder' js=1}",
     err_failed:   "{l s='Order failed. Please try again.' mod='quickorder' js=1}",
@@ -353,16 +383,73 @@ var QO_MSG = {
             return 1;
         }
 
+        /* ── QO-GEO-1 — client-side geography checks ─────────────────────
+           A CONVENIENCE, NOT A GATE. Every rule below is enforced again on
+           the server, which is where a request that never touched this form
+           is judged. These exist so the customer finds out before the round
+           trip, and so the offending field is highlighted rather than
+           described.
+
+           Kept deliberately looser than the server: the browser cannot know
+           the country's postcode format, and a client check that rejects a
+           valid address is worse than one that lets the server say so.  */
+        var QO_PLACEHOLDER_CITIES = [
+            '-', '--', '---', '.', '..', '...', '_', '/',
+            'city', 'ville', 'مدينة', 'na', 'nc', 'none', 'null',
+            'unknown', 'inconnu', 'maroc', 'morocco', 'المغرب', 'ma', 'test'
+        ];
+
+        function markInvalid(id) {
+            ['qo_name', 'qo_phone', 'qo_addr', 'qo_city', 'qo_zip'].forEach(function (each) {
+                var el = document.getElementById(each);
+                if (el) { el.classList.remove('qo-invalid'); }
+            });
+
+            var field = id ? document.getElementById(id) : null;
+
+            if (field) {
+                field.classList.add('qo-invalid');
+                try { field.focus({ preventScroll: false }); } catch (e) { field.focus(); }
+            }
+        }
+
+        function cityLooksReal(value) {
+            var folded = value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+            if (!folded) { return false; }
+            if (QO_PLACEHOLDER_CITIES.indexOf(folded) !== -1) { return false; }
+
+            /* Letters and digits only, so "A." is short and "سلا" is not. */
+            return value.replace(/[^\p{L}\p{N}]+/gu, '').length >= 2;
+        }
+
         function validate() {
             var n = document.getElementById('qo_name').value.trim();
             var p = document.getElementById('qo_phone').value.trim();
             var a = document.getElementById('qo_addr').value.trim();
+            var c = document.getElementById('qo_city').value.trim();
+            var z = document.getElementById('qo_zip').value.trim();
             var q = getQuantity();
 
-            if (!n || n.length < 3) return QO_MSG.err_name;
-            if (p.replace(/[^0-9]/g, '').length < 8) return QO_MSG.err_phone;
-            if (!a || a.length < 5) return QO_MSG.err_address;
-            if (!q || q < 1) return QO_MSG.err_qty;
+            if (!n || n.length < 3) { markInvalid('qo_name');  return QO_MSG.err_name; }
+            if (p.replace(/[^0-9]/g, '').length < 8) { markInvalid('qo_phone'); return QO_MSG.err_phone; }
+            if (!a || a.length < 5) { markInvalid('qo_addr');  return QO_MSG.err_address; }
+            if (!c) { markInvalid('qo_city'); return QO_MSG.err_city; }
+            if (!cityLooksReal(c)) { markInvalid('qo_city'); return QO_MSG.err_city_real; }
+
+            /* An empty postcode is an accepted answer. A non-empty one must
+               look like a postcode — never silently replaced by a default. */
+            if (z) {
+                var digits = z.replace(/[\s\-]/g, '');
+                if (!/^[0-9]{5}$/.test(digits) || digits === '00000') {
+                    markInvalid('qo_zip');
+                    return QO_MSG.err_zip;
+                }
+            }
+
+            if (!q || q < 1) { markInvalid('qo_qty'); return QO_MSG.err_qty; }
+
+            markInvalid(null);
             return null;
         }
 
@@ -395,7 +482,14 @@ var QO_MSG = {
             fd.append('full_name',           document.getElementById('qo_name').value.trim());
             fd.append('phone',               document.getElementById('qo_phone').value.trim());
             fd.append('address',             document.getElementById('qo_addr').value.trim());
-            fd.append('city',                '');
+
+            /* QO-GEO-1 — WHAT THE CUSTOMER TYPED.
+               This line used to read `fd.append('city', '')`, which is where
+               every `-` in the address table came from. The value is sent
+               verbatim: no canonicalisation, no spelling correction, no
+               default. Interpreting it is somebody else's job, later. */
+            fd.append('city',                document.getElementById('qo_city').value.trim());
+            fd.append('postcode',            document.getElementById('qo_zip').value.trim());
             fd.append('quantity',            getQuantity());
 
             /* Append group[] values — the backend uses these to resolve
@@ -441,7 +535,7 @@ var QO_MSG = {
             var qoReserved = [
                 'id_product', 'id_product_attribute', 'token', 'ajax',
                 'submitQuickOrder', 'full_name', 'phone', 'address', 'city',
-                'quantity', 'controller', 'fc', 'module'
+                'postcode', 'quantity', 'controller', 'fc', 'module'
             ];
 
             Object.keys(qoContract.fields || {}).forEach(function (name) {

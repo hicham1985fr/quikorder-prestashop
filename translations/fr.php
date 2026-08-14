@@ -98,3 +98,19 @@ $_MODULE['<{quickorder}prestashop>success_6957b0b6907b778b6f2977584b431bd2'] = '
 $_MODULE['<{quickorder}prestashop>success_0c34ed328396312bdb092b1f4889e074'] = 'Confirmation de Commande';
 $_MODULE['<{quickorder}prestashop>success_3ac92084c33ea921877c234d1ae82b5c'] = 'Vous aimerez aussi';
 $_MODULE['<{quickorder}prestashop>success_0a18f0aa51f30f1107495bf639caf16c'] = 'Acheter maintenant';
+
+// QO-GEO-1 — delivery geography
+$_MODULE['<{quickorder}prestashop>quickorder_form_57d056ed0984166336b7879c2af3657f'] = 'Ville';
+$_MODULE['<{quickorder}prestashop>quickorder_form_c7bd2d0dc8eafbaba2e3e20c0f07b643'] = 'ex. Casablanca';
+$_MODULE['<{quickorder}prestashop>quickorder_form_8bcdc441379cbf584638b0589a3f9adb'] = 'Code postal';
+$_MODULE['<{quickorder}prestashop>quickorder_form_d57c24f3fe52d16e7169b912dd647f0d'] = 'facultatif';
+$_MODULE['<{quickorder}prestashop>quickorder_form_c882ee3c353679a1755569fb0fc32631'] = 'ex. 20000';
+$_MODULE['<{quickorder}prestashop>quickorder_form_26733934572dafc4c6b4adeda1626ad3'] = 'Veuillez saisir votre ville.';
+$_MODULE['<{quickorder}prestashop>quickorder_form_cef7e534232c1997b43c9c55fb833f4e'] = 'Veuillez saisir le vrai nom de votre ville.';
+$_MODULE['<{quickorder}prestashop>quickorder_form_eda197a6560852aa989bb950d309fd37'] = 'Le code postal doit comporter 5 chiffres (par exemple 20000), ou rester vide.';
+$_MODULE['<{quickorder}prestashop>submit_26733934572dafc4c6b4adeda1626ad3'] = 'Veuillez saisir votre ville.';
+$_MODULE['<{quickorder}prestashop>submit_cef7e534232c1997b43c9c55fb833f4e'] = 'Veuillez saisir le vrai nom de votre ville.';
+$_MODULE['<{quickorder}prestashop>submit_9c23e650d62a36b71b67529b9c38b90f'] = 'Ce nom de ville contient des caractères non autorisés.';
+$_MODULE['<{quickorder}prestashop>submit_8bdc35b57e788e2061f2b70191abb274'] = 'Veuillez saisir votre vrai code postal, ou laisser le champ vide.';
+$_MODULE['<{quickorder}prestashop>submit_eda197a6560852aa989bb950d309fd37'] = 'Le code postal doit comporter 5 chiffres (par exemple 20000), ou rester vide.';
+$_MODULE['<{quickorder}prestashop>submit_37d968d85d98739653bae4e7fab2d270'] = 'Veuillez vérifier votre ville et votre code postal de livraison.';

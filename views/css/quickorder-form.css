@@ -74,6 +74,35 @@
 }
 .qo-f textarea { resize: vertical; min-height: 50px; }
 
+/* ── QO-GEO-1 — city and postcode, side by side ─────────────────────────
+   The postcode is short and the city is not, so they share one row on
+   anything wider than a small phone and stack below that. `flex-wrap` does
+   the whole job — no media query, and nothing to keep in sync with the
+   theme's breakpoints.
+
+   `gap` is on the flex container rather than margins on the children so the
+   row mirrors correctly in RTL without a second rule. */
+.qo-f.qo-geo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.qo-f.qo-geo > div { flex: 1 1 140px; min-width: 0; }
+.qo-f.qo-geo .qo-geo-zip { flex: 0 1 120px; }
+.qo-f .qo-opt {
+    font-weight: 400;
+    font-size: 12px;
+    color: #888;
+}
+
+/* A field the server refused. Applied by the submit script so the customer
+   is taken to the field rather than to a sentence about it. */
+.qo-f input.qo-invalid,
+.qo-f textarea.qo-invalid {
+    border-color: #e74c3c;
+    background: #fff6f5;
+}
+
 #qo-btn {
     display: block;
     width: 100%;

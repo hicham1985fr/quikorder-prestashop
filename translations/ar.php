@@ -98,3 +98,19 @@ $_MODULE['<{quickorder}prestashop>success_6957b0b6907b778b6f2977584b431bd2'] = '
 $_MODULE['<{quickorder}prestashop>success_0c34ed328396312bdb092b1f4889e074'] = 'تأكيد الطلب';
 $_MODULE['<{quickorder}prestashop>success_3ac92084c33ea921877c234d1ae82b5c'] = 'قد يعجبك أيضاً';
 $_MODULE['<{quickorder}prestashop>success_0a18f0aa51f30f1107495bf639caf16c'] = 'تسوق الآن';
+
+// QO-GEO-1 — delivery geography
+$_MODULE['<{quickorder}prestashop>quickorder_form_57d056ed0984166336b7879c2af3657f'] = 'المدينة';
+$_MODULE['<{quickorder}prestashop>quickorder_form_c7bd2d0dc8eafbaba2e3e20c0f07b643'] = 'مثال: الدار البيضاء';
+$_MODULE['<{quickorder}prestashop>quickorder_form_8bcdc441379cbf584638b0589a3f9adb'] = 'الرمز البريدي';
+$_MODULE['<{quickorder}prestashop>quickorder_form_d57c24f3fe52d16e7169b912dd647f0d'] = 'اختياري';
+$_MODULE['<{quickorder}prestashop>quickorder_form_c882ee3c353679a1755569fb0fc32631'] = 'مثال: 20000';
+$_MODULE['<{quickorder}prestashop>quickorder_form_26733934572dafc4c6b4adeda1626ad3'] = 'يرجى إدخال مدينتك.';
+$_MODULE['<{quickorder}prestashop>quickorder_form_cef7e534232c1997b43c9c55fb833f4e'] = 'يرجى إدخال الاسم الحقيقي لمدينتك.';
+$_MODULE['<{quickorder}prestashop>quickorder_form_eda197a6560852aa989bb950d309fd37'] = 'يجب أن يتكون الرمز البريدي من 5 أرقام (مثال 20000)، أو يُترك فارغًا.';
+$_MODULE['<{quickorder}prestashop>submit_26733934572dafc4c6b4adeda1626ad3'] = 'يرجى إدخال مدينتك.';
+$_MODULE['<{quickorder}prestashop>submit_cef7e534232c1997b43c9c55fb833f4e'] = 'يرجى إدخال الاسم الحقيقي لمدينتك.';
+$_MODULE['<{quickorder}prestashop>submit_9c23e650d62a36b71b67529b9c38b90f'] = 'اسم المدينة يحتوي على رموز غير مسموح بها.';
+$_MODULE['<{quickorder}prestashop>submit_8bdc35b57e788e2061f2b70191abb274'] = 'يرجى إدخال رمزك البريدي الحقيقي، أو ترك الحقل فارغًا.';
+$_MODULE['<{quickorder}prestashop>submit_eda197a6560852aa989bb950d309fd37'] = 'يجب أن يتكون الرمز البريدي من 5 أرقام (مثال 20000)، أو يُترك فارغًا.';
+$_MODULE['<{quickorder}prestashop>submit_37d968d85d98739653bae4e7fab2d270'] = 'يرجى التحقق من مدينة التوصيل والرمز البريدي.';
