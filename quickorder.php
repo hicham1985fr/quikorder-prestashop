@@ -16,6 +16,11 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+/* QO-GEO-1 — delivery-geography validation. A plain require rather than an
+   autoloader: this module has one class and no dependencies, and PrestaShop
+   loads `quickorder.php` before any of its controllers run. */
+require_once __DIR__ . '/classes/QuickOrderAddressInput.php';
+
 class QuickOrder extends PaymentModule
 {
     const CFG_DEFAULT_OS      = 'QUICKORDER_DEFAULT_OS';
@@ -27,7 +32,7 @@ class QuickOrder extends PaymentModule
     {
         $this->name            = 'quickorder';
         $this->tab             = 'payments_gateways';
-        $this->version         = '1.4.2';
+        $this->version         = '1.5.0';
         $this->author          = 'QuickOrder';
         $this->need_instance   = 0;
         $this->bootstrap       = true;

@@ -1,6 +1,6 @@
 <?php
 /**
- * Quick Order – Submit Controller (v1.4.1)
+ * Quick Order – Submit Controller (v1.5.0)
  *
  * Pure AJAX controller — $this->ajax = true.
  * Uses admin-selected order state from configuration.
@@ -272,8 +272,28 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
             throw new Exception($this->module->l('Please enter a valid address (at least 5 characters).', 'submit'));
         }
 
-        if (empty($city)) {
-            $city = '-';
+        /* ── QO-GEO-1 — DELIVERY GEOGRAPHY, AS THE CUSTOMER STATED IT ─────
+           ┌──────────────────────────────────────────────────────────────┐
+           │  `if (empty($city)) { $city = '-'; }` USED TO LIVE HERE.      │
+           └──────────────────────────────────────────────────────────────┘
+
+           That one line, plus `postcode = '00000'` in `createAddress()`,
+           produced 643 addresses whose city is `-` and 706 whose postcode is
+           a number nobody typed. Both look like geography; neither is one.
+
+           The city is now required and the postcode is optional-but-real:
+           blank is an honest answer, an invented value is not. Validation is
+           SERVER-SIDE — the client-side checks below are a convenience, and
+           a request that skips the form entirely still cannot fabricate a
+           postcode. */
+        $geography = QuickOrderAddressInput::validate(
+            Tools::getValue('city'),
+            Tools::getValue('postcode'),
+            $this->deliveryZipFormat()
+        );
+
+        if (!$geography['ok']) {
+            throw new Exception($this->geographyMessage($geography['error']));
         }
 
         return [
@@ -282,11 +302,56 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
             'phone'                => $phone,
             'phone_digits'         => $phoneDigits,
             'address'              => $address,
-            'city'                 => Tools::substr($city, 0, 64),
+            'city'                 => $geography['city'],
+            'postcode'             => $geography['postcode'],
             'quantity'             => $quantity,
             'id_product'           => $idProduct,
             'id_product_attribute' => $idPA,
         ];
+    }
+
+    /**
+     * The delivery country's own postcode format.
+     *
+     * Read from the installed country row rather than hard-coded, so a shop
+     * that later enables a second country gets that country's rule without an
+     * edit here. Morocco declares `NNNNN` on this installation.
+     */
+    private function deliveryZipFormat()
+    {
+        $country = new Country((int) Configuration::get('PS_COUNTRY_DEFAULT'));
+
+        return Validate::isLoadedObject($country) ? (string) $country->zip_code_format : '';
+    }
+
+    /**
+     * A reason code becomes a message the customer can act on.
+     *
+     * The validator returns codes rather than sentences so it stays pure and
+     * testable; the translation belongs here, where the module's catalogue is.
+     */
+    private function geographyMessage($code)
+    {
+        switch ($code) {
+            case QuickOrderAddressInput::CITY_EMPTY:
+                return $this->module->l('Please enter your city.', 'submit');
+
+            case QuickOrderAddressInput::CITY_PLACEHOLDER:
+            case QuickOrderAddressInput::CITY_TOO_SHORT:
+                return $this->module->l('Please enter the real name of your city.', 'submit');
+
+            case QuickOrderAddressInput::CITY_INVALID_CHARACTERS:
+                return $this->module->l('This city name contains characters that are not allowed.', 'submit');
+
+            case QuickOrderAddressInput::POSTCODE_FABRICATED:
+                return $this->module->l('Please enter your real postcode, or leave the field empty.', 'submit');
+
+            case QuickOrderAddressInput::POSTCODE_MALFORMED:
+                return $this->module->l('The postcode must be 5 digits (for example 20000), or left empty.', 'submit');
+
+            default:
+                return $this->module->l('Please check your delivery city and postcode.', 'submit');
+        }
     }
 
     private function validateProduct($idProduct, $idPA, $quantity)
@@ -430,7 +495,29 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
 
     /**
      * Create or update the delivery address.
-     * Logs address changes when the same customer orders with a different address.
+     *
+     * ┌──────────────────────────────────────────────────────────────────┐
+     * │  QO-GEO-1 — AN ADDRESS AN ORDER ALREADY USES IS NEVER REWRITTEN. │
+     * └──────────────────────────────────────────────────────────────────┘
+     *
+     * This method used to call `$existingAddr->update()` unconditionally.
+     * `AddressCore::update()` mutates the row in place — it does not version —
+     * and a PrestaShop order points at its delivery address by id. So a
+     * returning customer typing a new address silently rewrote the recorded
+     * delivery address of every order they had ever placed.
+     *
+     * That is not hypothetical here: 57 Quick Order addresses back more than
+     * one order, covering 156 of this shop's 602 orders, and one of them backs
+     * 35. Improving the data captured at checkout would have made it worse —
+     * more real values overwriting more history.
+     *
+     * PrestaShop's own answer is the one used here: an address that is in use
+     * is RETIRED (`deleted = 1`, which is how `Address::delete()` behaves for a
+     * used address) and a new row is created. Past orders keep pointing at the
+     * row they were placed against, and it never changes again.
+     *
+     * An address no order has used yet is still updated in place — there is no
+     * history to protect, and creating a row per edit would litter the account.
      */
     private function createAddress($customer, array $input)
     {
@@ -445,14 +532,23 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
             }
         }
 
-        $newAddress1 = pSQL(Tools::substr($input['address'], 0, 128));
-        $newCity     = !empty($input['city']) ? pSQL(Tools::substr($input['city'], 0, 64)) : '-';
+        $newAddress1 = Tools::substr($input['address'], 0, 128);
+        $newCity     = $input['city'];
+        $newPostcode = isset($input['postcode']) ? $input['postcode'] : '';
 
         if ($existingAddr && Validate::isLoadedObject($existingAddr)) {
-            /* ── Log address change if different ── */
             $oldAddr = trim($existingAddr->address1);
             $newAddr = trim($input['address']);
 
+            $unchanged = $oldAddr === $newAddr
+                && trim((string) $existingAddr->city) === trim($newCity)
+                && trim((string) $existingAddr->postcode) === trim($newPostcode);
+
+            if ($unchanged) {
+                return $existingAddr;
+            }
+
+            /* ── Log address change if different ── */
             if ($oldAddr !== $newAddr) {
                 $this->logCustomerChange(
                     (int) $customer->id,
@@ -463,16 +559,33 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
                 );
             }
 
-            /* Update existing address */
-            $existingAddr->firstname    = pSQL($input['firstname']);
-            $existingAddr->lastname     = pSQL($input['lastname']);
-            $existingAddr->address1     = $newAddress1;
-            $existingAddr->city         = $newCity;
-            $existingAddr->phone        = pSQL(Tools::substr($input['phone'], 0, 16));
-            $existingAddr->phone_mobile = pSQL(Tools::substr($input['phone'], 0, 16));
-            $existingAddr->update();
+            if (!$existingAddr->isUsed()) {
+                /* No order points at it. Safe to correct in place.
 
-            return $existingAddr;
+                   The `pSQL()` on the non-geography fields is left exactly as
+                   it was. It is redundant — `ObjectModel::formatValue()`
+                   escapes again — and therefore stores a literal backslash
+                   before an apostrophe, but changing how names and street
+                   lines are stored is not this phase's business. It IS this
+                   phase's business for the city: `M'Diq` is a Moroccan town,
+                   and `M\'Diq` is not a place. */
+                $existingAddr->firstname    = pSQL($input['firstname']);
+                $existingAddr->lastname     = pSQL($input['lastname']);
+                $existingAddr->address1     = pSQL($newAddress1);
+                $existingAddr->city         = $newCity;
+                $existingAddr->postcode     = $newPostcode;
+                $existingAddr->phone        = pSQL(Tools::substr($input['phone'], 0, 16));
+                $existingAddr->phone_mobile = pSQL(Tools::substr($input['phone'], 0, 16));
+                $existingAddr->update();
+
+                return $existingAddr;
+            }
+
+            /* IN USE. Retire it rather than rewrite it, and fall through to
+               create the customer's new one. The old row stays exactly as the
+               historical orders recorded it. */
+            $existingAddr->deleted = true;
+            $existingAddr->update();
         }
 
         /* ── Create new address ── */
@@ -482,9 +595,15 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
         $addr->alias       = 'Quick Order';
         $addr->firstname   = pSQL($input['firstname']);
         $addr->lastname    = pSQL($input['lastname']);
-        $addr->address1    = $newAddress1;
+        $addr->address1    = pSQL($newAddress1);
         $addr->city        = $newCity;
-        $addr->postcode    = '00000';
+
+        /* THE CUSTOMER'S POSTCODE, OR NOTHING.
+           `Address` does not require this field and `Validate::isPostCode()`
+           opens with `empty($postcode) ||` — so the empty string is what
+           PrestaShop itself means by "no postcode". `'00000'` used to live
+           here and meant the same thing while looking like a place. */
+        $addr->postcode    = $newPostcode;
         $addr->phone       = pSQL(Tools::substr($input['phone'], 0, 16));
         $addr->phone_mobile = pSQL(Tools::substr($input['phone'], 0, 16));
 
@@ -497,8 +616,14 @@ class QuickOrderSubmitModuleFrontController extends ModuleFrontController
         }
 
         if (!$addr->add()) {
-            $addr->address1 = pSQL(Tools::substr(preg_replace('/[^a-zA-Z0-9\s,.\-\/]/u', ' ', $input['address']), 0, 128));
-            $addr->city     = 'City';
+            /* The retry exists because a free-text street line can carry
+               characters `Validate::isAddress()` refuses. It sanitises THAT
+               field only — the city has already passed PrestaShop's own
+               `isCityName` rule, so it is never the cause and is never
+               replaced by a placeholder here. */
+            $addr->address1 = pSQL(Tools::substr(
+                preg_replace('/[^a-zA-Z0-9\s,.\-\/]/u', ' ', $input['address']), 0, 128));
+
             if (!$addr->add()) {
                 throw new Exception($this->module->l('Failed to create delivery address.', 'submit'));
             }

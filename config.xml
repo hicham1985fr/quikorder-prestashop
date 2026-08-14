@@ -2,7 +2,7 @@
 <module>
     <name>quickorder</name>
     <displayName><![CDATA[Quick Order &ndash; Cash on Delivery]]></displayName>
-    <version><![CDATA[1.4.1]]></version>
+    <version><![CDATA[1.5.0]]></version>
     <description><![CDATA[Adds a quick-order form (COD) on product pages.]]></description>
     <author><![CDATA[QuickOrder]]></author>
     <tab><![CDATA[payments_gateways]]></tab>
