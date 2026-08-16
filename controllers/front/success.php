@@ -262,10 +262,25 @@ class QuickOrderSuccessModuleFrontController extends ModuleFrontController
 
     /**
      * Get unique seller Facebook Pixel IDs for ordered products.
+     *
+     * The seller tables belong to the ETS marketplace module, which is NOT
+     * installed on every shop that runs Quick Order. A missing table is not a
+     * quietly shorter pixel list: `DbPDO::_query()` turns the PDO error into a
+     * PrestaShopException whatever the debug setting, so the query killed the
+     * confirmation page of an order that had already been saved and charged.
+     * The shopper got a 500 and no way to tell whether they had bought
+     * anything. A marketing pixel must never be able to do that, so the
+     * lookup is skipped when its tables are absent and swallowed if it fails
+     * for any other reason.
      */
     private function getSellerPixels(Order $order)
     {
         $pixels = array();
+
+        if (!$this->sellerTablesExist()) {
+            return $pixels;
+        }
+
         $products = $order->getProducts();
 
         if (empty($products)) {
@@ -285,7 +300,11 @@ class QuickOrderSuccessModuleFrontController extends ModuleFrontController
                     AND s.fb_pixel_id IS NOT NULL
                     AND s.fb_pixel_id != ""';
 
-        $rows = Db::getInstance()->executeS($sql);
+        try {
+            $rows = Db::getInstance()->executeS($sql);
+        } catch (Exception $e) {
+            return $pixels;
+        }
 
         if (is_array($rows)) {
             foreach ($rows as $row) {
@@ -294,6 +313,40 @@ class QuickOrderSuccessModuleFrontController extends ModuleFrontController
         }
 
         return $pixels;
+    }
+
+    /**
+     * True when both ETS marketplace seller tables are present.
+     *
+     * Answered once per request: the confirmation page asks at most twice and
+     * the answer cannot change under it.
+     */
+    private function sellerTablesExist()
+    {
+        static $exists = null;
+
+        if ($exists !== null) {
+            return $exists;
+        }
+
+        $db = Db::getInstance();
+        $exists = true;
+
+        /* information_schema rather than `SHOW TABLES LIKE`: `getValue()`
+           appends `LIMIT 1`, which SHOW refuses, and LIKE would treat the
+           prefix underscore as a wildcard. This match is exact. */
+        foreach (array('ets_mp_seller_product', 'ets_mp_seller') as $table) {
+            $sql = 'SELECT COUNT(*) FROM `information_schema`.`TABLES`
+                    WHERE `TABLE_SCHEMA` = DATABASE()
+                        AND `TABLE_NAME` = \'' . pSQL(_DB_PREFIX_ . $table) . '\'';
+
+            if (!(int) $db->getValue($sql)) {
+                $exists = false;
+                break;
+            }
+        }
+
+        return $exists;
     }
 
     public function getBreadcrumbLinks()
