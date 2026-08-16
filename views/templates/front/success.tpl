@@ -374,9 +374,11 @@
       {/foreach}
     {/if}
 
-    {* ── Action ── *}
+    {* ── Action ──
+       The Marketplace, not the homepage: this CTA follows a completed
+       purchase, and the error state below is the one that belongs on « accueil ». *}
     <div class="qo-ty-actions">
-      <a href="{$qo_home_url|escape:'htmlall':'UTF-8'}" class="qo-ty-btn">
+      <a href="{$qo_shop_url|escape:'htmlall':'UTF-8'}" class="qo-ty-btn">
         {l s='Continue Shopping' mod='quickorder'}
       </a>
     </div>

@@ -57,6 +57,15 @@ class QuickOrderSuccessModuleFrontController extends ModuleFrontController
         $this->context->smarty->assign(array_merge([
             'qo_valid'             => $valid,
             'qo_home_url'          => $this->context->link->getPageLink('index', true),
+            /* Where « Continuer mes achats » goes. The homepage is a story;
+               a shopper who has just bought wants the catalogue, so the CTA
+               lands on the Marketplace — the home category, read from the
+               configuration rather than hardcoded as 2. */
+            'qo_shop_url'          => $this->context->link->getCategoryLink(
+                (int) Configuration::get('PS_HOME_CATEGORY'),
+                null,
+                (int) $this->context->language->id
+            ),
             'qo_seller_pixels'     => $sellerPixels,
             'qo_related_products'  => $relatedProducts,
         ], $data));
